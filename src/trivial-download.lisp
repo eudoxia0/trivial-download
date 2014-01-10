@@ -37,6 +37,7 @@
   (floor (/ (* current-bytes 100) total-bytes)))
 
 (defun download (url output)
+  "Download a file and save it to a pathname."
   (with-open-file (file output
                       :direction :output
                       :if-does-not-exist :create
