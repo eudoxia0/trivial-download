@@ -4,7 +4,8 @@
   (:export :file-size
            :with-download
            :with-download
-           :download))
+           :download
+           :it))
 (in-package :trivial-download)
 
 (defmacro awhile (expr &body body)
@@ -36,7 +37,7 @@
     (format nil "~f ~A" (/ size (car pair)) (cdr pair))))
 
 (defun percentage (total-bytes current-bytes)
-  (floor (/ (* current-bytes 100) total-bytes)))
+  (floor (/ (* current-bytes 100) totl-bytes)))
 
 (defmacro with-download (url &rest body)
   `(let* ((file-size (file-size ,url))

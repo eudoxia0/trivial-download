@@ -23,7 +23,7 @@ Example:
 
 ```lisp
 (with-download "https://github.com/favicon.ico"
-  (format t "I'm a byte! ~A" it))
+  (format t "I'm a byte! ~A" trivial-download:it))
 ```
 
 * [Macro] `with-download-progress` *(url &rest body)*
