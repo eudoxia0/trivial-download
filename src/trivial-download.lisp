@@ -37,7 +37,7 @@
     (format nil "~f ~A" (/ size (car pair)) (cdr pair))))
 
 (defun percentage (total-bytes current-bytes)
-  (floor (/ (* current-bytes 100) totl-bytes)))
+  (floor (/ (* current-bytes 100) total-bytes)))
 
 (defmacro with-download (url &rest body)
   `(let* ((file-size (file-size ,url))
