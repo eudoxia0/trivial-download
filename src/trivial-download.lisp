@@ -2,6 +2,8 @@
 (defpackage trivial-download
   (:use :cl)
   (:export :file-size
+           :with-download
+           :with-download
            :download))
 (in-package :trivial-download)
 
@@ -36,29 +38,38 @@
 (defun percentage (total-bytes current-bytes)
   (floor (/ (* current-bytes 100) total-bytes)))
 
+(defmacro with-download (url &rest body)
+  `(let* ((file-size (file-size ,url))
+          (stream (drakma:http-request ,url
+                                       :want-stream t)))
+     (format t "Downloading ~S (~A)~&" ,url (if file-size
+                                                (human-file-size file-size)
+                                                "Unknown size"))
+     (awhile (read-byte stream nil nil)
+             ,@body)
+     (close stream)))
+
+(defmacro with-download-progress (url &rest body)
+  `(let ((byte-count 0)
+         (last-percentage 0))
+     (with-download ,url
+       (progn
+         (incf byte-count)
+         (if file-size
+             (let ((progress (percentage file-size byte-count)))
+               (if (> progress last-percentage)
+                   (if (eql 0 (mod progress 10))
+                       (format t "~D%" progress)
+                       (format t ".")))
+               (setf last-percentage progress)))
+         ,@body))))
+
 (defun download (url output)
   "Download a file and save it to a pathname."
   (with-open-file (file output
-                      :direction :output
-                      :if-does-not-exist :create
-                      :if-exists :supersede
-                      :element-type '(unsigned-byte 8))
-    (let* ((file-size (file-size url))
-           (input (drakma:http-request url
-                                       :want-stream t))
-           (byte-count 0)
-           (last-percentage 0))
-      (format t "Downloading ~S (~A)~&" url (if file-size
-                                                (human-file-size file-size)
-                                                "Unknown size"))
-      (awhile (read-byte input nil nil)
-        (write-byte it file)
-        (incf byte-count)
-        (if file-size
-            (let ((progress (percentage file-size byte-count)))
-              (if (> progress last-percentage)
-                  (if (eql 0 (mod progress 10))
-                      (format t "~D%" progress)
-                      (format t ".")))
-              (setf last-percentage progress))))
-    (close input))))
+                        :direction :output
+                        :if-does-not-exist :create
+                        :if-exists :supersede
+                        :element-type '(unsigned-byte 8))
+    (with-download-progress url
+      (write-byte it file))))
