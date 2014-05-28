@@ -3,7 +3,7 @@
   (:use :cl)
   (:export :file-size
            :with-download
-           :with-download
+           :with-download-progress
            :download
            :it))
 (in-package :trivial-download)
@@ -46,6 +46,7 @@
      (format t "Downloading ~S (~A)~&" ,url (if file-size
                                                 (human-file-size file-size)
                                                 "Unknown size"))
+     (finish-output nil)
      (awhile (read-byte stream nil nil)
              ,@body)
      (close stream)))
@@ -59,9 +60,11 @@
          (if file-size
              (let ((progress (percentage file-size byte-count)))
                (if (> progress last-percentage)
-                   (if (eql 0 (mod progress 10))
-                       (format t "~D%" progress)
-                       (format t ".")))
+                   (progn
+                    (if (eql 0 (mod progress 10))
+                         (format t "~D%" progress)
+                         (format t "."))
+                    (finish-output nil)))
                (setf last-percentage progress)))
          ,@body))))
 
