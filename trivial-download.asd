@@ -4,7 +4,7 @@
 (in-package :trivial-download-asd)
 
 (defsystem trivial-download
-  :version "0.1"
+  :version "0.2"
   :author "Fernando Borretti"
   :license "MIT"
   :depends-on (:drakma)

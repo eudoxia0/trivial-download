@@ -14,16 +14,37 @@ Downloading "https://github.com/favicon.ico" (6.518 kB)
 
 # Documentation
 
+You probably want the `download` function, which downloads files from the
+network to the local disk. If you want more control over that -- like, say,
+writing the downloaded bytes to a database instead -- you want the
+`with-download` macro.
+
+`trivial-download` downloads everything in chunks that are `*chunk-size*` bytes
+long. `*chunk-size*`, by default, is 256.
+
+* [Function] `download` *(url output)*
+
+Downloads the content of `url` and writes it to `output`. The file is written as
+it is downloaded, chunk-by-chunk, not downloaded into memory and written at
+once.
+
 * [Macro] `with-download` *(url &rest body)*
 
-Executes `body` in a loop. Inside `body`, the variables `stream` and `it` are
-defined to the file stream and the current byte, respectively.
+Downloads the contents of `url`, executing `body` in every chunk.
+
+Inside `body`, the following variables are accessible:
+
+- `stream`: A `flexi-io-stream` bivalent stream.
+- `file-size`: The size, in bytes, of the file to download.
+- `bytes-read`: The number of bytes read.
+- `array`: As every chunk is downloaded, its contents are written to `array`.
 
 Example:
 
 ```lisp
 (with-download "https://github.com/favicon.ico"
-  (format t "I'm a byte! ~A" trivial-download:it))
+  ;; Do something
+  )
 ```
 
 * [Macro] `with-download-progress` *(url &rest body)*
@@ -31,14 +52,8 @@ Example:
 The same as `with-download`, only this prints progress information while
 downloading.
 
-* [Function] `download` *(url output)*
-
-An specialization of `with-download-progress` for the most common case: Saving
-the file in `url` to the pathname in `output`.
-
 # License
 
 Copyright (c) 2014 Fernando Borretti (eudoxiahp@gmail.com)
 
 Licensed under the MIT License.
-

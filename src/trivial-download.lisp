@@ -1,17 +1,16 @@
 (in-package :cl-user)
 (defpackage trivial-download
   (:use :cl)
-  (:export :file-size
+  (:export :*chunk-size*
+           :file-size
            :with-download
            :with-download-progress
            :download
            :it))
 (in-package :trivial-download)
 
-(defmacro awhile (expr &body body)
-  `(do ((it ,expr ,expr))
-       ((not it))
-     ,@body))
+(defparameter *chunk-size* 256
+  "Files are downloaded in chunks of this many bytes.")
 
 (defun file-size (url)
   "Take a URL to a file, return the size (in bytes)."
@@ -41,24 +40,32 @@
 
 (defmacro with-download (url &rest body)
   `(let* ((file-size (file-size ,url))
+          (total-bytes-read 0)
+          (array (make-array *chunk-size* :element-type '(unsigned-byte 8)))
           (stream (drakma:http-request ,url
                                        :want-stream t)))
      (format t "Downloading ~S (~A)~&" ,url (if file-size
                                                 (human-file-size file-size)
                                                 "Unknown size"))
      (finish-output nil)
-     (awhile (read-byte stream nil nil)
-             ,@body)
+     ;; We read the file in `*chunk-size*`-byte chunks by using `read-sequence`
+     ;; to fill `array`. The return value of `read-sequence`, in this context,
+     ;; is the number of bytes read. we know we've reached the end of file when
+     ;; the number of bytes read is less than `*chunk-size*`
+     (loop do
+       (let ((bytes-read-this-chunk (read-sequence array stream)))
+         (incf total-bytes-read bytes-read-this-chunk)
+         ,@body
+         (if (< bytes-read-this-chunk *chunk-size*)
+             (return))))
      (close stream)))
 
 (defmacro with-download-progress (url &rest body)
-  `(let ((byte-count 0)
-         (last-percentage 0))
+  `(let ((last-percentage 0))
      (with-download ,url
        (progn
-         (incf byte-count)
          (if file-size
-             (let ((progress (percentage file-size byte-count)))
+             (let ((progress (percentage file-size total-bytes-read)))
                (if (> progress last-percentage)
                    (progn
                     (if (eql 0 (mod progress 10))
@@ -76,4 +83,4 @@
                         :if-exists :supersede
                         :element-type '(unsigned-byte 8))
     (with-download-progress url
-      (write-byte it file))))
+      (write-sequence array file :end bytes-read-this-chunk))))
