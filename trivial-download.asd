@@ -13,15 +13,5 @@
                 ((:file "trivial-download"))))
   :description "Download files from Common Lisp"
   :long-description
-  #.(with-open-file (stream (merge-pathnames
-                             #p"README.md"
-                             (or *load-pathname* *compile-file-pathname*))
-                            :if-does-not-exist nil
-                            :direction :input)
-      (when stream
-        (let ((seq (make-array (file-length stream)
-                               :element-type 'character
-                               :fill-pointer t)))
-          (setf (fill-pointer seq) (read-sequence seq stream))
-          seq)))
-  :in-order-to ((test-op (load-op trivial-download-test))))
+  #.(uiop:read-file-string
+     (uiop:subpathname *load-pathname* "README.md")))
