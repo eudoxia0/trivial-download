@@ -76,11 +76,14 @@
          ,@body))))
 
 (defun download (url output)
-  "Download a file and save it to a pathname."
-  (with-open-file (file output
-                        :direction :output
-                        :if-does-not-exist :create
-                        :if-exists :supersede
-                        :element-type '(unsigned-byte 8))
-    (with-download-progress url
-      (write-sequence array file :end bytes-read-this-chunk))))
+  "Download a file and save it to a pathname. Directories containing `output`
+are created if they don't exist."
+  (let ((dir (make-pathname :directory (pathname-directory output))))
+    (ensure-directories-exist dir)
+    (with-open-file (file output
+                          :direction :output
+                          :if-does-not-exist :create
+                          :if-exists :supersede
+                          :element-type '(unsigned-byte 8))
+      (with-download-progress url
+        (write-sequence array file :end bytes-read-this-chunk)))))
