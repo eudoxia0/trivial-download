@@ -7,6 +7,7 @@
   :version "0.2"
   :author "Fernando Borretti"
   :license "MIT"
+  :homepage "https://github.com/eudoxia0/trivial-download"
   :depends-on (:drakma)
   :components ((:module "src"
                 :components
