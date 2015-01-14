@@ -1,3 +1,7 @@
+# trivial-download
+
+[![Build Status](https://travis-ci.org/eudoxia0/trivial-download.svg?branch=master)](https://travis-ci.org/eudoxia0/trivial-download)
+
 trivial-download allows you to download files from the Internet from Common
 Lisp. It even provides a progress bar.
 
