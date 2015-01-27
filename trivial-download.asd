@@ -1,13 +1,11 @@
-(in-package :cl-user)
-(defpackage trivial-download-asd
-  (:use :cl :asdf))
-(in-package :trivial-download-asd)
-
 (defsystem trivial-download
-  :version "0.2"
-  :author "Fernando Borretti"
+  :author "Fernando Borretti <eudoxiahp@gmail.com>"
+  :maintainer "Fernando Borretti <eudoxiahp@gmail.com>"
   :license "MIT"
+  :version "0.2"
   :homepage "https://github.com/eudoxia0/trivial-download"
+  :bug-tracker "https://github.com/eudoxia0/trivial-download/issues"
+  :source-control (:git "git@github.com:eudoxia0/trivial-download.git")
   :depends-on (:drakma)
   :components ((:module "src"
                 :components
