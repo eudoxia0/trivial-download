@@ -29,7 +29,7 @@
 (test set-up
   (finishes
    (setf *server-handler*
-         (clack:clackup +server+ :port +server-port+))))
+         (clack:clackup (lack:builder +server+) :port +server-port+))))
 
 (test (download-file :depends-on set-up)
   (finishes
