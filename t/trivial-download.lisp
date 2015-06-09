@@ -41,9 +41,17 @@
    (equal +readme-content+
           (uiop:read-file-string +download-pathname+))))
 
+(test (missing-file :depends-on set-up)
+  (finishes
+    (delete-file +download-pathname+))
+  (signals trivial-download:http-error (trivial-download:download "http://localhost:41111/notafile"
+                                                                  +download-pathname+))
+  (is-false (probe-file +download-pathname+)))
+
 (test (tear-down :depends-on set-up)
   (finishes
-   (delete-file +download-pathname+))
+    (when (probe-file +download-pathname+)
+      (delete-file +download-pathname+)))
   (finishes
    (clack:stop *server-handler*)))
 
