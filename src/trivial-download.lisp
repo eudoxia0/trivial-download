@@ -6,11 +6,24 @@
            :with-download
            :with-download-progress
            :download
+           :http-error
            :it))
 (in-package :trivial-download)
 
 (defparameter *chunk-size* 256
   "Files are downloaded in chunks of this many bytes.")
+
+(define-condition http-error (error)
+  ((code :initarg :code :accessor response-code))
+  (:report (lambda (c s)
+             (format s "HTTP error, response code ~S." (response-code c)))))
+
+(defun http-request (url &rest args)
+  (let* ((vals (multiple-value-list (apply #'drakma:http-request url args)))
+         (code (second vals)))
+    (unless (= 200 code)
+      (error 'http-error :code code))
+    (values-list vals)))
 
 (defun file-size (url)
   "Take a URL to a file, return the size (in bytes)."
@@ -19,7 +32,7 @@
        (cdr
         (assoc :content-length
                (third (multiple-value-list
-                       (drakma:http-request url :want-stream t :method :head))))))
+                       (http-request url :want-stream t :method :head))))))
     (t () nil)))
 
 (defparameter +size-symbol-map+
@@ -42,8 +55,8 @@
   `(let* ((file-size (file-size ,url))
           (total-bytes-read 0)
           (array (make-array *chunk-size* :element-type '(unsigned-byte 8)))
-          (stream (drakma:http-request ,url
-                                       :want-stream t)))
+          (stream (http-request ,url
+                                :want-stream t)))
      (format t "Downloading ~S (~A)~&" ,url (if file-size
                                                 (human-file-size file-size)
                                                 "Unknown size"))
