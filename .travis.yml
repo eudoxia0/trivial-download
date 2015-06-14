@@ -19,7 +19,7 @@ script:
                    (declare (ignore c h))
                    (uiop:quit -1)))'
        -e '(coveralls:with-coveralls (:exclude (list "t"))
-             (ql:quickload :trivial-download-test)'
+             (ql:quickload :trivial-download-test))'
 
 notifications:
   email:
