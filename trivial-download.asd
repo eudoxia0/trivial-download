@@ -2,7 +2,7 @@
   :author "Fernando Borretti <eudoxiahp@gmail.com>"
   :maintainer "Fernando Borretti <eudoxiahp@gmail.com>"
   :license "MIT"
-  :version "0.2"
+  :version "0.3"
   :homepage "https://github.com/eudoxia0/trivial-download"
   :bug-tracker "https://github.com/eudoxia0/trivial-download/issues"
   :source-control (:git "git@github.com:eudoxia0/trivial-download.git")

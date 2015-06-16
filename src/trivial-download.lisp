@@ -51,14 +51,15 @@
 (defun percentage (total-bytes current-bytes)
   (floor (/ (* current-bytes 100) total-bytes)))
 
-(defmacro with-download (url &rest body)
-  `(let* ((file-size (file-size ,url))
-          (total-bytes-read 0)
-          (array (make-array *chunk-size* :element-type '(unsigned-byte 8)))
-          (stream (http-request ,url
-                                :want-stream t)))
-     (format t "Downloading ~S (~A)~&" ,url (if file-size
-                                                (human-file-size file-size)
+(defmacro with-download (url (file-size total-bytes-read array stream)
+                         &body body)
+  `(let* ((,file-size (file-size ,url))
+          (,total-bytes-read 0)
+          (,array (make-array *chunk-size* :element-type '(unsigned-byte 8)))
+          (,stream (http-request ,url
+                                 :want-stream t)))
+     (format t "Downloading ~S (~A)~&" ,url (if ,file-size
+                                                (human-file-size ,file-size)
                                                 "Unknown size"))
      (finish-output nil)
      ;; We read the file in `*chunk-size*`-byte chunks by using `read-sequence`
@@ -66,27 +67,29 @@
      ;; is the number of bytes read. we know we've reached the end of file when
      ;; the number of bytes read is less than `*chunk-size*`
      (loop do
-       (let ((bytes-read-this-chunk (read-sequence array stream)))
-         (incf total-bytes-read bytes-read-this-chunk)
+       (let ((bytes-read-this-chunk (read-sequence ,array ,stream)))
+         (incf ,total-bytes-read bytes-read-this-chunk)
          ,@body
          (if (< bytes-read-this-chunk *chunk-size*)
              (return))))
-     (close stream)))
+     (close ,stream)))
 
-(defmacro with-download-progress (url &rest body)
-  `(let ((last-percentage 0))
-     (with-download ,url
-       (progn
-         (if file-size
-             (let ((progress (percentage file-size total-bytes-read)))
-               (if (> progress last-percentage)
-                   (progn
-                    (if (eql 0 (mod progress 10))
-                         (format t "~D%" progress)
-                         (format t "."))
-                    (finish-output nil)))
-               (setf last-percentage progress)))
-         ,@body))))
+(defmacro with-download-progress (url (file-size total-bytes-read array stream)
+                                  &body body)
+  (alexandria:with-gensyms (last-percentage progress)
+    `(let ((,last-percentage 0))
+       (with-download ,url (,file-size ,total-bytes-read ,array ,stream)
+         (progn
+           (if ,file-size
+               (let ((,progress (percentage ,file-size ,total-bytes-read)))
+                 (if (> ,progress ,last-percentage)
+                     (progn
+                       (if (eql 0 (mod ,progress 10))
+                           (format t "~D%" ,progress)
+                           (format t "."))
+                       (finish-output nil)))
+                 (setf ,last-percentage ,progress)))
+           ,@body)))))
 
 (defun download (url output)
   "Download a file and save it to a pathname. Directories containing `output`
@@ -98,5 +101,5 @@ are created if they don't exist."
                           :if-does-not-exist :create
                           :if-exists :supersede
                           :element-type '(unsigned-byte 8))
-      (with-download-progress url
+      (with-download-progress url (file-size total-bytes-read array stream)
         (write-sequence array file :end bytes-read-this-chunk)))))

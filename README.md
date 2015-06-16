@@ -32,11 +32,11 @@ Downloads the content of `url` and writes it to `output`. The file is written as
 it is downloaded, chunk-by-chunk, not downloaded into memory and written at
 once.
 
-* [Macro] `with-download` *(url &rest body)*
+* [Macro] `with-download` *(url (file-size total-bytes-read array stream) &rest body)*
 
 Downloads the contents of `url`, executing `body` in every chunk.
 
-Inside `body`, the following variables are accessible:
+The extra arguments are:
 
 - `stream`: A `flexi-io-stream` bivalent stream.
 - `file-size`: The size, in bytes, of the file to download.
@@ -51,7 +51,7 @@ Example:
   )
 ```
 
-* [Macro] `with-download-progress` *(url &rest body)*
+* [Macro] `with-download-progress` *(url (file-size total-bytes-read array stream) &rest body)*
 
 The same as `with-download`, only this prints progress information while
 downloading.
