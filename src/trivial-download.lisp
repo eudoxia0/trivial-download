@@ -53,6 +53,7 @@
 
 (defmacro with-download (url (file-size total-bytes-read array stream)
                          &body body)
+  "Execute body at every chunk that is downloaded."
   `(let* ((,file-size (file-size ,url))
           (,total-bytes-read 0)
           (,array (make-array *chunk-size* :element-type '(unsigned-byte 8)))
@@ -76,6 +77,7 @@
 
 (defmacro with-download-progress (url (file-size total-bytes-read array stream)
                                   &body body)
+  "Like with-download but with a progress bar."
   (alexandria:with-gensyms (last-percentage progress)
     `(let ((,last-percentage 0))
        (with-download ,url (,file-size ,total-bytes-read ,array ,stream)
