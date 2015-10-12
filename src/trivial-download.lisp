@@ -32,7 +32,7 @@
        (cdr
         (assoc :content-length
                (third (multiple-value-list
-                       (http-request url :want-stream t :method :head))))))
+                       (http-request url :method :head))))))
     (t () nil)))
 
 (defparameter +size-symbol-map+
