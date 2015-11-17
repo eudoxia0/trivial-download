@@ -51,7 +51,7 @@
 (defun percentage (total-bytes current-bytes)
   (floor (/ (* current-bytes 100) total-bytes)))
 
-(defmacro with-download (url (file-size total-bytes-read array stream)
+(defmacro with-download (url (file-size total-bytes-read array stream &key quiet)
                          &body body)
   "Execute body at every chunk that is downloaded."
   `(let* ((,file-size (file-size ,url))
@@ -59,9 +59,10 @@
           (,array (make-array *chunk-size* :element-type '(unsigned-byte 8)))
           (,stream (http-request ,url
                                  :want-stream t)))
-     (format t "Downloading ~S (~A)~&" ,url (if ,file-size
-                                                (human-file-size ,file-size)
-                                                "Unknown size"))
+     (unless quiet
+       (format t "Downloading ~S (~A)~&" ,url (if ,file-size
+                                                  (human-file-size ,file-size)
+                                                  "Unknown size")))
      (finish-output nil)
      ;; We read the file in `*chunk-size*`-byte chunks by using `read-sequence`
      ;; to fill `array`. The return value of `read-sequence`, in this context,
@@ -75,12 +76,12 @@
              (return))))
      (close ,stream)))
 
-(defmacro with-download-progress (url (file-size total-bytes-read array stream)
+(defmacro with-download-progress (url (file-size total-bytes-read array stream &key quiet)
                                   &body body)
   "Like with-download but with a progress bar."
   (alexandria:with-gensyms (last-percentage progress)
     `(let ((,last-percentage 0))
-       (with-download ,url (,file-size ,total-bytes-read ,array ,stream)
+       (with-download ,url (,file-size ,total-bytes-read ,array ,stream :quiet ,quiet)
          (progn
            (if ,file-size
                (let ((,progress (percentage ,file-size ,total-bytes-read)))
@@ -93,15 +94,18 @@
                  (setf ,last-percentage ,progress)))
            ,@body)))))
 
-(defun download (url output)
+(defun download (url output &key quiet)
   "Download a file and save it to a pathname. Directories containing `output`
 are created if they don't exist."
-  (let ((dir (make-pathname :directory (pathname-directory output))))
-    (ensure-directories-exist dir)
-    (with-open-file (file output
-                          :direction :output
-                          :if-does-not-exist :create
-                          :if-exists :supersede
-                          :element-type '(unsigned-byte 8))
-      (with-download-progress url (file-size total-bytes-read array stream)
-        (write-sequence array file :end bytes-read-this-chunk)))))
+  (ensure-directories-exist (uiop:pathname-directory-pathname output))
+  (with-open-file (file output
+                        :direction :output
+                        :if-does-not-exist :create
+                        :if-exists :supersede
+                        :element-type '(unsigned-byte 8))
+    (if quiet
+        (with-download url (file-size total-bytes-read array stream :quiet quiet)
+          (write-sequence array file :end bytes-read-this-chunk))
+        (with-download-progress url (file-size total-bytes-read array stream
+                                               :quiet quiet)
+          (write-sequence array file :end bytes-read-this-chunk)))))
