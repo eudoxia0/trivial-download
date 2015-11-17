@@ -32,7 +32,7 @@
        (cdr
         (assoc :content-length
                (third (multiple-value-list
-                       (http-request url :want-stream t :method :head))))))
+                       (http-request url :method :head))))))
     (t () nil)))
 
 (defparameter +size-symbol-map+
@@ -45,11 +45,15 @@
 (defun human-file-size (size)
   "Take a file size (in bytes), return it as a human-readable string."
   (let ((pair (loop for pair in +size-symbol-map+
-                    if (>= size (car pair)) return pair)))
+                    if (or (>= size (car pair))
+                           (= (car pair) 1))
+                    return pair)))
     (format nil "~f ~A" (/ size (car pair)) (cdr pair))))
 
 (defun percentage (total-bytes current-bytes)
-  (floor (/ (* current-bytes 100) total-bytes)))
+  (if (= current-bytes 0)
+      100
+      (floor (/ (* current-bytes 100) total-bytes))))
 
 (defmacro with-download (url (file-size total-bytes-read array stream &key quiet)
                          &body body)
