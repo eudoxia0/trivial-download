@@ -55,18 +55,20 @@
       100
       (floor (/ (* current-bytes 100) total-bytes))))
 
-(defmacro with-download (url (file-size total-bytes-read array stream &key quiet)
+
+(defmacro with-download (url (file-size total-bytes-read array stream &key quiet drakma-options)
                          &body body)
   "Execute body at every chunk that is downloaded."
   `(let* ((,file-size (file-size ,url))
           (,total-bytes-read 0)
           (,array (make-array *chunk-size* :element-type '(unsigned-byte 8)))
-          (,stream (http-request ,url
-                                 :want-stream t)))
-     (unless quiet
+          (,stream (apply #'http-request ,url
+			  :want-stream t
+			  ,drakma-options)))
+     (unless ,quiet
        (format t "Downloading ~S (~A)~&" ,url (if ,file-size
-                                                  (human-file-size ,file-size)
-                                                  "Unknown size")))
+							 (human-file-size ,file-size)
+							 "Unknown size")))
      (finish-output nil)
      ;; We read the file in `*chunk-size*`-byte chunks by using `read-sequence`
      ;; to fill `array`. The return value of `read-sequence`, in this context,
@@ -80,12 +82,12 @@
              (return))))
      (close ,stream)))
 
-(defmacro with-download-progress (url (file-size total-bytes-read array stream &key quiet)
+(defmacro with-download-progress (url (file-size total-bytes-read array stream &key quiet drakma-options)
                                   &body body)
   "Like with-download but with a progress bar."
   (alexandria:with-gensyms (last-percentage progress)
     `(let ((,last-percentage 0))
-       (with-download ,url (,file-size ,total-bytes-read ,array ,stream :quiet ,quiet)
+       (with-download ,url (,file-size ,total-bytes-read ,array ,stream :quiet ,quiet :drakma-options ,drakma-options)
          (progn
            (if ,file-size
                (let ((,progress (percentage ,file-size ,total-bytes-read)))
@@ -98,7 +100,7 @@
                  (setf ,last-percentage ,progress)))
            ,@body)))))
 
-(defun download (url output &key quiet)
+(defun download (url output &key quiet drakma-options)
   "Download a file and save it to a pathname. Directories containing `output`
 are created if they don't exist."
   (ensure-directories-exist (uiop:pathname-directory-pathname output))
@@ -108,8 +110,8 @@ are created if they don't exist."
                         :if-exists :supersede
                         :element-type '(unsigned-byte 8))
     (if quiet
-        (with-download url (file-size total-bytes-read array stream :quiet quiet)
+        (with-download url (file-size total-bytes-read array stream :quiet quiet :drakma-options drakma-options)
           (write-sequence array file :end bytes-read-this-chunk))
         (with-download-progress url (file-size total-bytes-read array stream
-                                               :quiet quiet)
+                                               :quiet quiet :drakma-options drakma-options)
           (write-sequence array file :end bytes-read-this-chunk)))))
