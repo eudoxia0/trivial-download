@@ -25,14 +25,14 @@
       (error 'http-error :code code))
     (values-list vals)))
 
-(defun file-size (url)
-  "Take a URL to a file, return the size (in bytes)."
+(defun file-size (headers)
+  "Take the headers of a http request, return the size (in bytes)."
   (handler-case
       (parse-integer
        (cdr
         (assoc :content-length
                (third (multiple-value-list
-                       (http-request url :method :head))))))
+                       headers)))))
     (t () nil)))
 
 (defparameter +size-symbol-map+
@@ -58,11 +58,13 @@
 (defmacro with-download (url (file-size total-bytes-read array stream &key quiet)
                          &body body)
   "Execute body at every chunk that is downloaded."
-  `(let* ((,file-size (file-size ,url))
+  `(let* ((response (multiple-value-list
+                     (http-request ,url
+                                   :want-stream t)))
+          (,file-size (file-size (third response)))
           (,total-bytes-read 0)
           (,array (make-array *chunk-size* :element-type '(unsigned-byte 8)))
-          (,stream (http-request ,url
-                                 :want-stream t)))
+          (,stream (car response)))
      (unless quiet
        (format t "Downloading ~S (~A)~&" ,url (if ,file-size
                                                   (human-file-size ,file-size)
