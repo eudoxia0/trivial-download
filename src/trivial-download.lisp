@@ -65,7 +65,7 @@
           (,total-bytes-read 0)
           (,array (make-array *chunk-size* :element-type '(unsigned-byte 8)))
           (,stream (car response)))
-     (unless quiet
+     (unless ,quiet
        (format t "Downloading ~S (~A)~&" ,url (if ,file-size
                                                   (human-file-size ,file-size)
                                                   "Unknown size")))
